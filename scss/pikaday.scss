@@ -94,7 +94,7 @@ $pd-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !default;
     z-index: 9999;
     overflow: hidden;
     margin: 0;
-    padding: 5px 3px;
+    padding: 10px 3px 0px;
     font-size: 14px;
     line-height: 20px;
     font-weight: bold;
@@ -107,21 +107,8 @@ $pd-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !default;
     display: block;
     cursor: pointer;
     position: relative;
-    outline: none;
-    border: 0;
-    padding: 0;
-    width: 20px;
-    height: 30px;
-    text-indent: 20px; // hide text using text-indent trick, using width value (it's enough)
-    white-space: nowrap;
-    overflow: hidden;
-    background-color: transparent;
-    background-position: center center;
-    background-repeat: no-repeat;
-    background-size: 75% 75%;
-    opacity: .5;
-    *position: absolute;
-    *top: 0;
+    padding: 10px 10px;
+    font-weight: bold;
 
     &:hover {
         opacity: 1;
@@ -136,13 +123,11 @@ $pd-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !default;
 .pika-prev,
 .is-rtl .pika-next {
     float: left;
-    *left: 0;
 }
 
 .pika-next,
 .is-rtl .pika-prev {
     float: right;
-    *right: 0;
 }
 
 .pika-select {

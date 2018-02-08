@@ -271,7 +271,8 @@
             nextMonth     : 'Next Month',
             months        : ['January','February','March','April','May','June','July','August','September','October','November','December'],
             weekdays      : ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
-            weekdaysShort : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+            weekdaysShort : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+            weekdaysUltraShort: ['Su','Mo','Tu','We','Th','Fr','Sa']
         },
 
         // Theme Classname
@@ -300,7 +301,7 @@
         while (day >= 7) {
             day -= 7;
         }
-        return abbr ? opts.i18n.weekdaysShort[day] : opts.i18n.weekdays[day];
+        return abbr ? opts.i18n.weekdaysUltraShort[day] : opts.i18n.weekdays[day];
     },
 
     renderDay = function(opts)
@@ -373,7 +374,7 @@
             arr.push('<th></th>');
         }
         for (i = 0; i < 7; i++) {
-            arr.push('<th scope="col"><abbr title="' + renderDayName(opts, i) + '">' + renderDayName(opts, i, true) + '</abbr></th>');
+            arr.push('<th scope="col"><span title="' + renderDayName(opts, i) + '">' + renderDayName(opts, i, true) + '</span></th>');
         }
         return '<thead><tr>' + (opts.isRTL ? arr.reverse() : arr).join('') + '</tr></thead>';
     },
@@ -429,10 +430,10 @@
         }
 
         if (c === 0) {
-            html += '<button class="fal fa-angle-left' + (prev ? '' : ' is-disabled') + '" type="button">' + opts.i18n.previousMonth + '</button>';
+            html += '<i class="pika-prev fa fa-angle-left' + (prev ? '' : ' is-disabled') + '"></i>';
         }
         if (c === (instance._o.numberOfMonths - 1) ) {
-            html += '<button class="fal fa-angle-right' + (next ? '' : ' is-disabled') + '" type="button">' + opts.i18n.nextMonth + '</button>';
+            html += '<i class="pika-next fa fa-angle-right' + (next ? '' : ' is-disabled') + '"></i>';
         }
 
         return html += '</div>';
@@ -440,7 +441,7 @@
 
     renderTable = function(opts, data, randId)
     {
-        return '<table cellpadding="0" cellspacing="0" class="pika-table" role="grid" aria-labelledby="' + randId + '">' + renderHead(opts) + renderBody(data) + '</table>';
+        return '<div class="pika-table-container"><table cellpadding="0" cellspacing="0" class="pika-table" role="grid" aria-labelledby="' + randId + '">' + renderHead(opts) + renderBody(data) + '</table></div>';
     },
 
 
