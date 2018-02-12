@@ -196,6 +196,9 @@
         // the default output format for `.toString()` and `field` value
         format: 'YYYY-MM-DD',
 
+        // if enabled switches calendar to the month
+        pickMonth: false,
+
         // the toString function which gets passed a current date object and format
         // and returns a string
         toString: null,
@@ -301,7 +304,9 @@
         while (day >= 7) {
             day -= 7;
         }
-        return abbr ? opts.i18n.weekdaysUltraShort[day] : opts.i18n.weekdays[day];
+        return opts.weekdaysUltraShort ? opts.i18n.weekdaysUltraShort[day]
+            : abbr ? opts.i18n.weekdaysShort[day]
+                : opts.i18n.weekdays[day];
     },
 
     renderDay = function(opts)
@@ -367,6 +372,23 @@
         return '<tbody>' + rows.join('') + '</tbody>';
     },
 
+    renderMonth = function(opts, monthName) {
+        var arr = [];
+        var ariaSelected = 'false';
+
+        if (opts.isSelected) {
+            arr.push('is-selected');
+            ariaSelected = 'true';
+        }
+
+        return '<td data-month="' + opts.currentMonth + '" class="' + arr.join(' ') + '" aria-selected="' + ariaSelected + '">' +
+            '<button class="pika-button pika-month" type="button" ' +
+            'data-pika-year="' + opts.year + '" data-pika-month="' + opts.currentMonth + '">' +
+            monthName +
+            '</button>' +
+            '</td>';
+    },
+
     renderHead = function(opts)
     {
         var i, arr = [];
@@ -415,7 +437,9 @@
         }
         yearHtml = '<div class="pika-label">' + year + opts.yearSuffix + '<select class="pika-select pika-select-year" tabindex="-1">' + arr.join('') + '</select></div>';
 
-        if (opts.showMonthAfterYear) {
+        if (opts.pickMonth) {
+            html += yearHtml;
+        } else if (opts.showMonthAfterYear) {
             html += yearHtml + monthHtml;
         } else {
             html += monthHtml + yearHtml;
@@ -441,7 +465,8 @@
 
     renderTable = function(opts, data, randId)
     {
-        return '<div class="pika-table-container"><table cellpadding="0" cellspacing="0" class="pika-table" role="grid" aria-labelledby="' + randId + '">' + renderHead(opts) + renderBody(data) + '</table></div>';
+        var innerHtml = (opts.pickMonth ? '' : renderHead(opts)) + renderBody(data);
+        return '<div class="pika-table-container"><table cellpadding="0" cellspacing="0" class="pika-table" role="grid" aria-labelledby="' + randId + '">' + innerHtml + '</table></div>';
     },
 
 
@@ -465,7 +490,7 @@
             }
 
             if (!hasClass(target, 'is-disabled')) {
-                if (hasClass(target, 'pika-button') && !hasClass(target, 'is-empty') && !hasClass(target.parentNode, 'is-disabled')) {
+                if (hasClass(target, 'pika-button pika-day') && !hasClass(target, 'is-empty') && !hasClass(target.parentNode, 'is-disabled')) {
                     self.setDate(new Date(target.getAttribute('data-pika-year'), target.getAttribute('data-pika-month'), target.getAttribute('data-pika-day')));
                     if (opts.bound) {
                         sto(function() {
@@ -475,6 +500,23 @@
                             }
                         }, 100);
                     }
+                }
+                else if (hasClass(target, 'pika-button pika-month') && !hasClass(target, 'is-empty') && !hasClass(target.parentNode, 'is-disabled')) {
+                    self.setDate(new Date(target.getAttribute('data-pika-year'), target.getAttribute('data-pika-month')));
+                    if (opts.bound) {
+                        sto(function() {
+                            self.hide();
+                            if (opts.blurFieldOnSelect && opts.field) {
+                                opts.field.blur();
+                            }
+                        }, 100);
+                    }
+                }
+                else if (hasClass(target, 'pika-prev') && opts.pickMonth) {
+                    self.prevYear();
+                }
+                else if (hasClass(target, 'pika-next') && opts.pickMonth) {
+                    self.nextYear();
                 }
                 else if (hasClass(target, 'pika-prev')) {
                     self.prevMonth();
@@ -620,7 +662,7 @@
         };
 
         self.el = document.createElement('div');
-        self.el.className = 'pika-single' + (opts.isRTL ? ' is-rtl' : '') + (opts.theme ? ' ' + opts.theme : '');
+        self.el.className = 'pika-single' + (opts.pickMonth ? ' is-pick-month' : '')  + (opts.isRTL ? ' is-rtl' : '') + (opts.theme ? ' ' + opts.theme : '');
 
         addEvent(self.el, 'mousedown', self._onMouseDown, true);
         addEvent(self.el, 'touchend', self._onMouseDown, true);
@@ -915,6 +957,18 @@
             this.adjustCalendars();
         },
 
+        nextYear: function()
+        {
+            this.calendars[0].year++;
+            this.adjustCalendars();
+        },
+
+        prevYear: function()
+        {
+            this.calendars[0].year--;
+            this.adjustCalendars();
+        },
+
         /**
          * change view to a specific full year (e.g. "2012")
          */
@@ -1121,37 +1175,56 @@
             }
             cells += 7 - after;
             var isWeekSelected = false;
-            for (var i = 0, r = 0; i < cells; i++)
-            {
-                var day = new Date(year, month, 1 + (i - before)),
-                    isSelected = isDate(this._d) ? compareDates(day, this._d) : false,
-                    isToday = compareDates(day, now),
-                    hasEvent = opts.events.indexOf(day.toDateString()) !== -1 ? true : false,
-                    isEmpty = i < before || i >= (days + before),
-                    dayNumber = 1 + (i - before),
-                    monthNumber = month,
-                    yearNumber = year,
-                    isStartRange = opts.startRange && compareDates(opts.startRange, day),
-                    isEndRange = opts.endRange && compareDates(opts.endRange, day),
-                    isInRange = opts.startRange && opts.endRange && opts.startRange < day && day < opts.endRange,
-                    isDisabled = (opts.minDate && day < opts.minDate) ||
-                                 (opts.maxDate && day > opts.maxDate) ||
-                                 (opts.disableWeekends && isWeekend(day)) ||
-                                 (opts.disableDayFn && opts.disableDayFn(day));
-
-                if (isEmpty) {
-                    if (i < before) {
-                        dayNumber = daysInPreviousMonth + dayNumber;
-                        monthNumber = previousMonth;
-                        yearNumber = yearOfPreviousMonth;
-                    } else {
-                        dayNumber = dayNumber - days;
-                        monthNumber = nextMonth;
-                        yearNumber = yearOfNextMonth;
+            if (opts.pickMonth) {
+                var months = opts.i18n.months;
+                for (var m = 0; m < 4; m++) {
+                    var monthsRow = '';
+                    for (var n = 0; n < 3; n++) {
+                        var currentMonth = m * 3 + n;
+                        var isSelected = isDate(this._d) ? compareDates(new Date(year, currentMonth), this._d) : false;
+                        var monthData = {
+                            month: month,
+                            year: year,
+                            currentMonth: currentMonth,
+                            isSelected: isSelected
+                        };
+                        monthsRow += renderMonth(monthData, months[currentMonth]);
                     }
+                    data.push('<tr>' + monthsRow + '</tr>');
                 }
+            }
+            else {
+                for (var i = 0, r = 0; i < cells; i++)
+                {
+                    var day = new Date(year, month, 1 + (i - before)),
+                        isSelected = isDate(this._d) ? compareDates(day, this._d) : false,
+                        isToday = compareDates(day, now),
+                        hasEvent = opts.events.indexOf(day.toDateString()) !== -1 ? true : false,
+                        isEmpty = i < before || i >= (days + before),
+                        dayNumber = 1 + (i - before),
+                        monthNumber = month,
+                        yearNumber = year,
+                        isStartRange = opts.startRange && compareDates(opts.startRange, day),
+                        isEndRange = opts.endRange && compareDates(opts.endRange, day),
+                        isInRange = opts.startRange && opts.endRange && opts.startRange < day && day < opts.endRange,
+                        isDisabled = (opts.minDate && day < opts.minDate) ||
+                            (opts.maxDate && day > opts.maxDate) ||
+                            (opts.disableWeekends && isWeekend(day)) ||
+                            (opts.disableDayFn && opts.disableDayFn(day));
 
-                var dayConfig = {
+                    if (isEmpty) {
+                        if (i < before) {
+                            dayNumber = daysInPreviousMonth + dayNumber;
+                            monthNumber = previousMonth;
+                            yearNumber = yearOfPreviousMonth;
+                        } else {
+                            dayNumber = dayNumber - days;
+                            monthNumber = nextMonth;
+                            yearNumber = yearOfNextMonth;
+                        }
+                    }
+
+                    var dayConfig = {
                         day: dayNumber,
                         month: monthNumber,
                         year: yearNumber,
@@ -1167,20 +1240,21 @@
                         enableSelectionDaysInNextAndPreviousMonths: opts.enableSelectionDaysInNextAndPreviousMonths
                     };
 
-                if (opts.pickWholeWeek && isSelected) {
-                    isWeekSelected = true;
-                }
-
-                row.push(renderDay(dayConfig));
-
-                if (++r === 7) {
-                    if (opts.showWeekNumber) {
-                        row.unshift(renderWeek(i - before, month, year));
+                    if (opts.pickWholeWeek && isSelected) {
+                        isWeekSelected = true;
                     }
-                    data.push(renderRow(row, opts.isRTL, opts.pickWholeWeek, isWeekSelected));
-                    row = [];
-                    r = 0;
-                    isWeekSelected = false;
+
+                    row.push(renderDay(dayConfig));
+
+                    if (++r === 7) {
+                        if (opts.showWeekNumber) {
+                            row.unshift(renderWeek(i - before, month, year));
+                        }
+                        data.push(renderRow(row, opts.isRTL, opts.pickWholeWeek, isWeekSelected));
+                        row = [];
+                        r = 0;
+                        isWeekSelected = false;
+                    }
                 }
             }
             return renderTable(opts, data, randId);
